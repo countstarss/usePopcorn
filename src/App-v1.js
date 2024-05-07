@@ -1,30 +1,8 @@
 import { Children, useEffect, useState } from "react";
 import StartRating from "./StartRating.js"
-
+// import tempMovieData from "./components/movieData.js"
 // OMDb API: http://www.omdbapi.com/?i=tt3896198&apikey=626f89cc
-const tempMovieData = [
-  {
-    imdbID: "tt1375666",
-    Title: "Inception",
-    Year: "2010",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-  },
-  {
-    imdbID: "tt0133093",
-    Title: "The Matrix",
-    Year: "1999",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg",
-  },
-  {
-    imdbID: "tt6751668",
-    Title: "Parasite",
-    Year: "2019",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg",
-  },
-];
+
 
 const tempWatchedData = [
   {
@@ -79,13 +57,18 @@ export default function App() {
     //除了id相同的那个,其他的全部过滤一下,相当于删除掉了一个
     setWatched(watched=>watched.filter(movie=>movie.imdbID !== id));
   }
+
+  
   useEffect(function () {
+
+    const controller = new AbortController();
+
     async function fetchMovies() {
       //fetching data
       try {
         setIsLoading(true);
         setError('');
-        const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`)
+        const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,{single:controller.single})
 
         if (!res.ok) throw new Error("Something went wrong with fetching data")
 
@@ -93,9 +76,13 @@ export default function App() {
         if (data.Response === 'False') throw new Error("Movie not found");
 
         setMovies(data.Search)
+        setError("");
       } catch (err) {
-        console.error(err.message);
-        setError(err.message);
+        
+        if(err.name !== "AbortError"){ 
+          console.error(err.message);
+          setError(err.message);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -106,7 +93,13 @@ export default function App() {
       //如果是这样的情况,直接返回,不调用fetch函数
       return;
     }
+    handleCloseMovie();
     fetchMovies();
+
+    return function(){
+      // 当再次键入时,停止当前的fetch
+      controller.abort();
+    }
   }, [query]);
 
 
@@ -156,6 +149,7 @@ function Error({ message }) {
   return <p className="error"><span>⛔️</span>{message}</p>
 }
 
+// =========  NavBar  =======
 function NavBar({ children }) {
 
   return <nav className="nav-bar">
@@ -163,7 +157,7 @@ function NavBar({ children }) {
     {children}
   </nav>
 }
-// =========  NavBar  =======
+
 
 function Search({ query, setQuery }) {
 
@@ -272,7 +266,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     imdbRating: imdbRating,
     Plot: plot
   } = movie;
-  console.log(title, year, actors, String(imdbRating));
+  // console.log(title, year, actors, String(imdbRating));
 
   function handleAdd() {
     const newWatchedMovie = {
@@ -288,6 +282,19 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     onCloseMovie();
   }
 
+  useEffect(function(){
+    const Escape = (e)=>{
+      if (e.code === 'Escape'){
+        onCloseMovie();
+        console.log('console');
+      }
+    }
+    document.addEventListener('keydown',Escape)
+    // function cleanUp
+    return function (){
+      document.removeEventListener('keydown',Escape)
+    }
+  },[onCloseMovie])
 
   useEffect(function () {
     async function getMovieDetails() {
@@ -300,12 +307,23 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     };
     getMovieDetails();
   }, [selectedId])
+
+  // 将标题改成电影名字
+  useEffect(function(){
+    
+    if (!title) return ;
+    document.title = `Movie | ${title}`;
+    return function(){
+      document.title = "usePopcorn";
+    }
+  },[title])
+
   return (
     <>
       <div className="details">
         {isLoading ? <Loader /> :
           <>
-            <header>
+            <header className="header">
               <button
                 className="btn-back"
                 onClick={() => onCloseMovie()}
@@ -326,7 +344,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
                 </p >
               </div>
             </header>
-            <section>
+            <section className="rating">
               <div className="rating">
 
                 {
