@@ -158,7 +158,6 @@ function NavBar({ children }) {
   </nav>
 }
 
-
 function Search({ query, setQuery }) {
 
   return (
@@ -398,8 +397,6 @@ function WatchedBox({ children }) {
     </div>
   )
 }
-
-
 
 function WatchedSummary({ watched }) {
 
