@@ -12,11 +12,20 @@ const KEY = `626f89cc`;
 
 export default function App() {
   const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
+  // const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+
+  //加载本地存储的 watched
+  //方法是将watched的初始值换成一个回调函数,回调函数最后返回一个字符串
+  //因为添加本地存储的effct和handleAddWatched分开了,所以每次存储的watched都是最新的,直接通过getItem()获取watched
+  const [watched, setWatched] = useState(function(){
+    const storedValue = localStorage.getItem('watched');
+    return JSON.parse(storedValue);
+  });
+
 
   function handleSelectMovie(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
@@ -34,8 +43,15 @@ export default function App() {
     //除了id相同的那个,其他的全部过滤一下,相当于删除掉了一个
     setWatched(watched=>watched.filter(movie=>movie.imdbID !== id));
   }
+  // 新内容
+  // 添加本地存储
+  useEffect(function(){
+    // 添加本地存储
+    localStorage.setItem('watched',JSON.stringify(watched))
+  },[watched])
 
-  
+
+
   useEffect(function () {
 
     const controller = new AbortController();
