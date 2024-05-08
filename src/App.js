@@ -1,4 +1,4 @@
-import { Children, useEffect, useState } from "react";
+import { Children, useEffect, useRef, useState } from "react";
 import StartRating from "./StartRating.js"
 // import tempMovieData from "./components/movieData.js"
 // OMDb API: http://www.omdbapi.com/?i=tt3896198&apikey=626f89cc
@@ -95,6 +95,8 @@ export default function App() {
     }
   }, [query]);
 
+  
+
 
   return (
     <>
@@ -153,6 +155,28 @@ function NavBar({ children }) {
 
 function Search({ query, setQuery }) {
 
+  const inputEl =  useRef(null)
+
+  useEffect(function(){
+    console.log(inputEl.current);
+    inputEl.current.focus()
+  },[])
+
+  useEffect(function(){
+    const callback = (e) => {
+
+      if(document.activeElement === inputEl.current)
+        return;
+
+      if (e.code === "Enter"){
+        inputEl.current.focus();
+        setQuery("");
+        console.log("Enter");
+      }
+    }
+    document.addEventListener("keydown",callback)
+  },[setQuery])
+
   return (
     <input
       className="search"
@@ -160,6 +184,7 @@ function Search({ query, setQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
+      ref={inputEl}
     />
   )
 }
@@ -243,8 +268,15 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
 
   const isWatched = watched.map(movie => movie.imdbID).includes(selectedId)
   const watchedMovieRate = watched.find((movie) => movie.imdbID === selectedId)?.userRating
-  console.log(`看过: ${isWatched}`);
+  // console.log(`看过: ${isWatched}`);
   // console.log(haveID);
+
+  const countRef = useRef(0);
+
+  useEffect(function(){
+    if(userRating) countRef.current += 1
+    console.log(countRef.current);
+  },[userRating])
 
   const {
     Title: title,
@@ -271,6 +303,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(" ").at(0)),
       userRating,
+      countRatingDecisions:countRef.current
     };
     onAddWatched(newWatchedMovie);
     onCloseMovie();
@@ -446,7 +479,7 @@ function WatchedMoviesList({ watched ,onDeleteWatched}) {
 }
 
 function WatchedMovie({ movie,onDeleteWatched }) {
-  console.log(Number(movie.imdbRating));
+  // console.log(Number(movie.imdbRating));
   return (
     <li key={movie.imdbID}>
       <img src={movie.poster} alt={`${movie.title} poster`} />
