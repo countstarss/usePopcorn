@@ -1,7 +1,7 @@
 import { Children, useEffect, useRef, useState } from "react";
 import StartRating from "./StartRating.js"
-// import tempMovieData from "./components/movieData.js"
-// OMDb API: http://www.omdbapi.com/?i=tt3896198&apikey=626f89cc
+import { useMovies } from "./useMovies"
+import { useLocalStorageState } from "./useLocalStorageState.js";
 
 
 const average = (arr) =>
@@ -11,21 +11,12 @@ const average = (arr) =>
 const KEY = `626f89cc`;
 
 export default function App() {
-  const [movies, setMovies] = useState([]);
-  // const [watched, setWatched] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  // 原来这三个变量是App中的State,转移到useMovies中之后,从hook中导出,引入到这里
+  const { movies,isLoading,error } = useMovies(query);
 
-  //加载本地存储的 watched
-  //方法是将watched的初始值换成一个回调函数,回调函数最后返回一个字符串
-  //因为添加本地存储的effct和handleAddWatched分开了,所以每次存储的watched都是最新的,直接通过getItem()获取watched
-  const [watched, setWatched] = useState(function(){
-    const storedValue = localStorage.getItem('watched');
-    return JSON.parse(storedValue);
-  });
-
+  const [watched,setWatched] = useLocalStorageState([],"watched");
 
   function handleSelectMovie(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
@@ -45,58 +36,10 @@ export default function App() {
   }
   // 新内容
   // 添加本地存储
-  useEffect(function(){
-    // 添加本地存储
-    localStorage.setItem('watched',JSON.stringify(watched))
-  },[watched])
-
-
-
-  useEffect(function () {
-
-    const controller = new AbortController();
-
-    async function fetchMovies() {
-      //fetching data
-      try {
-        setIsLoading(true);
-        setError('');
-        const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,{single:controller.single})
-
-        if (!res.ok) throw new Error("Something went wrong with fetching data")
-
-        const data = await res.json()
-        if (data.Response === 'False') throw new Error("Movie not found");
-
-        setMovies(data.Search)
-        setError("");
-      } catch (err) {
-        
-        if(err.name !== "AbortError"){ 
-          console.error(err.message);
-          setError(err.message);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    if (query.length < 3) {
-      setMovies([]);
-      setError('');
-      //如果是这样的情况,直接返回,不调用fetch函数
-      return;
-    }
-    handleCloseMovie();
-    fetchMovies();
-
-    return function(){
-      // 当再次键入时,停止当前的fetch
-      controller.abort();
-    }
-  }, [query]);
-
-  
-
+  // useEffect(function(){
+  //   // 添加本地存储
+  //   localStorage.setItem('watched',JSON.stringify(watched))
+  // },[watched])
 
   return (
     <>
