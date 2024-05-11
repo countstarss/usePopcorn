@@ -2,6 +2,7 @@ import { Children, useEffect, useRef, useState } from "react";
 import StartRating from "./StartRating.js"
 import { useMovies } from "./useMovies"
 import { useLocalStorageState } from "./useLocalStorageState.js";
+import { useKey } from "./useKey.js";
 
 
 const average = (arr) =>
@@ -100,25 +101,13 @@ function Search({ query, setQuery }) {
 
   const inputEl =  useRef(null)
 
-  useEffect(function(){
-    console.log(inputEl.current);
-    inputEl.current.focus()
-  },[])
+  useKey("Enter",()=>{
+    if(document.activeElement === inputEl.current)
+      return;
 
-  useEffect(function(){
-    const callback = (e) => {
-
-      if(document.activeElement === inputEl.current)
-        return;
-
-      if (e.code === "Enter"){
-        inputEl.current.focus();
-        setQuery("");
-        console.log("Enter");
-      }
-    }
-    document.addEventListener("keydown",callback)
-  },[setQuery])
+    inputEl.current.focus();
+    setQuery("");
+  });
 
   return (
     <input
@@ -254,24 +243,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     // setAvgRating(Number(imdbRating));
     // setAvgRating((avgRating)=>(avgRating + userRating) / 2);
   }
-
-  
-  
-
-  // 检测按键
-  useEffect(function(){
-    const Escape = (e)=>{
-      if (e.code === 'Escape'){
-        onCloseMovie();
-        console.log('console');
-      }
-    }
-    document.addEventListener('keydown',Escape)
-    // function cleanUp
-    return function (){
-      document.removeEventListener('keydown',Escape)
-    }
-  },[onCloseMovie])
+  useKey('Escape',onCloseMovie);
 
   // 搜索输入框中的内容
   useEffect(function () {
